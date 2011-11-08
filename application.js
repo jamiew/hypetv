@@ -58,10 +58,11 @@ function megaplaya_callback(event_name, args) {
       var item = $('#video_'+index);
       debug("ONVIDEOLOAD", item);
       $('#videos li.selected').removeClass('selected');
+      item.addClass('selected');
       megaplaya.api_growl("Now Playing: " + video.post_title)
       break;
     default:
-      debug("Unhandled megaplaya event: "+event_name);
+      // debug("Unhandled megaplaya event: "+event_name);
       break;
   }
 }
@@ -109,17 +110,26 @@ function load_videos_callback(data){
   });
   blog_posts = videos;
 
+  $('#videos ul').html('');
   if (videos) {
-    update_video_list(videos);
+    debug("got videos, doing stuff");
     megaplaya.api_playQueue(videos);
+    update_video_list(videos);
   }
 }
 
 function update_video_list(videos) {
   debug("update_video_list()...", videos);
-  $('#videos ul').html('');
   debug("loading "+videos.length+" videos...");
   $.each(videos, function(i, video){
+
+    $('#videos ul').append('<li id="video_'+i+'">'+
+        '<div class="thumbnail">THUMB</div>' +
+        '<div class="title">TITLE</div>' +
+        '<div class="details">DETAILS</div>' +
+        '<div class="clear"></div>' +
+      '</li>');
+
     // TODO batch url support in vhx api
     $.ajax({
       type: "GET",
@@ -136,7 +146,8 @@ function update_video_list(videos) {
 
 }
 
-var video_i = 0;
+var video_i = 0,
+    first_loaded = false;
 function load_video_info(data) {
   var video = data.video;
   var i = video_i;
@@ -152,13 +163,20 @@ function load_video_info(data) {
     video.post_title = post.post_title;
     video.site_id = post.site_id;
   }
+  $('#video_'+i+' .thumbnail').html('<a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a>');
+  $('#video_'+i+' .title').html('<a href="'+video.url+'" target="_blank">'+video.title+'</a>');
+  $('#video_'+i+' .details').html('<span><a href="#'+video.site_id+'">Blog '+video.site_id+'</a></span>&nbsp;&ndash;&nbsp;<a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a>');
+  // $('.details em a')
+  // $('.title a')
+  // $(video)
 
-  $('#videos ul').append('<li id="video_'+i+'">'+
-      '<div class="thumbnail"><a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a></div>' +
-      '<div class="title"><a href="'+video.url+'" target="_blank">'+video.title+'</a></div>' +
-      '<div class="details"><em><a href="#'+video.site_id+'">Blog '+video.site_id+'</a></em>&nbsp;&ndash;<a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a></div>' +
-      '<div class="clear"></div>' +
-    '</li>');
+
+  if (!first_loaded) {
+    debug("NOT FIRST LOADED....");
+    $('#video_'+i).addClass('selected'); // FIXME load order messes with 1st video getting selected; force it
+    first_loaded = true;
+  }
+
 
   // TODO use jquery.live()
   $('#video_'+i+'').click(function(){
