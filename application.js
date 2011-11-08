@@ -63,6 +63,7 @@ function megaplaya_callback(event_name, args) {
 var hype_list = undefined;
 function load_videos() {
   debug("load_videos()...", blogname);
+
   $.ajax({
     type: "GET",
     url: "http://api.hypem.com/api/experimental_video_"+blogname,
@@ -70,7 +71,10 @@ function load_videos() {
     success: load_videos_callback,
     error: function(){ alert("Error fetching data") }
   });
-  $('#toggle_popular').addClass('selected');
+
+  // Select which page we just loaded
+  $('.toggles.selected').removeClass('selected');
+  $('#toggle_'+blogname).addClass('selected');
 }
 
 var blog_posts = undefined;
@@ -116,10 +120,6 @@ function load_videos_callback(data){
 
 function update_video_list(videos) {
   debug("update_video_list(): loading "+videos.length+" videos...", videos);
-
-  // Select which page we just loaded
-  $('.toggles.selected').removeClass('selected');
-  $('#toggle_'+blogname).addClass('selected');
 
   $.each(videos, function(i, video){
 
