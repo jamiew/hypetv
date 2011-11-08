@@ -116,6 +116,11 @@ function load_videos_callback(data){
 
 function update_video_list(videos) {
   debug("update_video_list(): loading "+videos.length+" videos...", videos);
+
+  // Select which page we just loaded
+  $('.toggles.selected').removeClass('selected');
+  $('#toggle_'+blogname).addClass('selected');
+
   $.each(videos, function(i, video){
 
     $('#videos ul').append('<li id="video_'+video.internal_id+'">'+
@@ -150,10 +155,6 @@ function update_video_list(videos) {
     megaplaya.api_playQueueAt(index);
     return false;
   });
-
-  // Select which page we just loaded
-  $('.toggles.selected').removeClass('selected');
-  $('#toggle_'+blogname).addClass('selected');
 
 }
 
