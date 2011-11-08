@@ -11,6 +11,11 @@ if(window.location.hash){
 
 // Load VHX player
 $(document).ready(function(){
+  $('.video', '.video a').click(function(){
+    alert("Playing dat video");
+    return false;
+  });
+
   $('#megaplaya').flash({
     swf: 'http://vhx.tv/embed/megaplaya.swf',
     width: '100%',
@@ -19,97 +24,108 @@ $(document).ready(function(){
     allowScriptAccess: "always"
   });
 
-  $('.video', '.video a').click(function(){
-    alert("Playing dat video");
-    return false;
-  });
 });
 
 // Megaplaya calls this function when it's ready
 var megaplaya = false;
 function megaplaya_loaded(){
   megaplaya = $('#megaplaya').children()[0];
+  megaplaya_addListeners();
   load_videos();
 }
 
-function load_videos(){
-  $.ajax({
-    type: "GET",
-    url: "http://api.tumblr.com/v2/blog/"+blogname+"/posts/video?api_key=PyezS3Q4Smivb24d9SzZGYSuhMNPQUhMsVetMC9ksuGPkK1BTt&jsonp=load_videos_callback",
-    dataType: "jsonp"
+function megaplaya_call(method){
+  // "pause" => megaplaya.api_pause();
+  (megaplaya["api_" + method])();
+}
+
+function megaplaya_addListeners(){
+  var events = ['onVideoFinish', 'onVideoLoad', 'onError', 'onPause', 'onPlay', 'onFullscreen', 'onPlaybarShow', 'onPlaybarHide', 'onKeyboardDown'];
+
+  $.each(events, function(index, value) {
+    megaplaya.api_addListener(value, "function() { megaplaya_callback('" + value + "', arguments); }")
   });
 }
 
-var tumblr = false; // REMOVEME
+function megaplaya_callback(event_name, args) {
+  switch (event_name) {
+    case 'onVideoLoad':
+      var video = megaplaya.api_getCurrentVideo();
+      setTimeout(function(){
+        megaplaya.api_growl("Now Playing: " + video.post_title)
+      }, 1000);
+      break;
+    default:
+      debug("Unhandled megaplaya event: "+event_name);
+      break;
+  }
+}
+
+function load_videos() {
+  debug("load_videos()...");
+  $.ajax({
+    type: "GET",
+    url: "http://api.hypem.com/api/experimental_video_latest",
+    dataType: 'jsonp',
+    success: load_videos_callback,
+    error: function(){ alert("Error fetching data") }
+  });
+}
+
 function load_videos_callback(data){
-  tumblr = data; // REMOVEME
+  debug("load_videos_callback()...");
   debug(data);
+  debug(data[0]);
 
-  // Set blog info
-  var blog = data.response.blog;
-  $('#video-info').hide();
-  $('#video-info .title').html('<a target="_blank" href="'+video-info.url+'">'+video-info.title+'</a>');
-  $('#video-info .url').html('<a target="_blank" href="'+video-info.url+'">'+video-info.url.replace('http://','').replace(/\/$/,'')+'</a>');
-  $('#video-info .description').html(video-info.description);
-  // Tumblr API doesn't have avatar :-(
-  $('#video-info').fadeIn('slow');
-
+  // // Set blog info
+  // var blog = data.response.blog;
+  // $('#video-info').hide();
+  // $('#video-info .title').html('<a target="_blank" href="'+video-info.url+'">'+video-info.title+'</a>');
+  // $('#video-info .url').html('<a target="_blank" href="'+video-info.url+'">'+video-info.url.replace('http://','').replace(/\/$/,'')+'</a>');
+  // $('#video-info .description').html(video-info.description);
+  // // Tumblr API doesn't have avatar :-(
+  // $('#video-info').fadeIn('slow');
+  //
   // Process and load videos
-  var videos = $.map(tumblr.response.posts, function(item){
-    var raw_url = item.player[0].embed_code.match(/src=\"([^\"]+)/)[1];
-    vimeo_url = match_vimeo_video(raw_url);
-    youtube_url = match_youtube_video(raw_url);
-    if(vimeo_url && youtube_url) {
-      debug("Matched both Vimeo & YouTube, using Vimeo: "+vimeo_url);
-      url = vimeo_url;
+  var videos = $.map(data, function(item){
+    var video = {
+          site: item.hreftitle,
+          id: item.url,
+          post_title: item.posttitle,
+          post_url: item.postentryurl,
+          site_id: item.siteid,
+          created_at: item.dateposted,
+        }
+    if(item.hreftitle == 'YOUTUBE') {
+      video.url = "http://www.youtube.com/watch?v="+video.id;
+      // debug("Matched YouTube: "+video.url);
     }
-    else if(vimeo_url){
-      debug("Matched Vimeo: "+vimeo_url);
-      url = vimeo_url;
-    }
-    else if(youtube_url){
-      debug("Match YouTube: "+youtube_url);
-      url = youtube_url;
+    else if(item.hreftitle == 'VIMEO'){
+      video.url = "http://vimeo.com/"+video.id;
+      // debug("Matched Vimeo: "+video.url);
     }
     else {
-      debug("No match for "+raw_url);
-      url = undefined;
+      debug("WARN: no match for site "+video.site);
     }
-    return {raw_url: raw_url, url: url}
+    return video;
   });
 
   if (videos) {
+    update_video_list(videos);
+    megaplaya.api_growl(videos.length+" videos loaded...");
     megaplaya.api_playQueue(videos);
-    $('#video-info').delay(7000).slideUp('fast');
   }
 }
 
-function match_vimeo_video(url){
-  patterns = [
-    /player\.vimeo\.com\/video\/(\d+)/,
-    /vimeo\.com\/(\d+)/
-  ];
-  return match_video_from_patterns(url, "http://vimeo.com/", patterns);
-}
-
-function match_youtube_video(url){
-  patterns = [
-    /v\/([^&#\?"\\]+)/,
-    /v=([^&#\?"\\]+)/,
-    /youtu\.be\/([^&#\?"\\])/
-  ];
-  return match_video_from_patterns(url, "http://www.youtube.com/watch?v=", patterns);
-}
-
-function match_video_from_patterns(url, base_url, patterns){
-  var id = false;
-  for(i = 0; regex = patterns[i]; i++){
-    var matches = url.match(regex);
-    if(!id && matches != null && matches.length > 0){
-      id = matches[1];
-      url = base_url + id;
-    }
-    // debug("url="+url);
-  }
-  return url;
+function update_video_list(videos) {
+  debug("update_video_list()...", videos);
+  $('#videos ul').html('');
+  $.each(videos, function(i, video) {
+    debug("Adding video #"+i, video);
+    $('#videos ul').append('<li>'+
+        '<div class="thumbnail"><a href="#"><img src="http://b.vimeocdn.com/ts/167/282/167282503_200.jpg" /></a></div>' +
+        '<div class="title"><a href="#">Video '+(i+1)+'</a></div>' +
+        '<div class="details">Site #' + video.site_id + ' <a href="'+video.post_url+'">Link</a></div>' +
+      '</li>');
+  });
 }
