@@ -11,11 +11,6 @@ if(window.location.hash){
 
 // Load VHX player
 $(document).ready(function(){
-  $('.video', '.video a').click(function(){
-    alert("Playing dat video");
-    return false;
-  });
-
   $('#megaplaya').flash({
     swf: 'http://vhx.tv/embed/megaplaya.swf',
     width: '100%',
@@ -50,10 +45,12 @@ function megaplaya_addListeners(){
 function megaplaya_callback(event_name, args) {
   switch (event_name) {
     case 'onVideoLoad':
-      var video = megaplaya.api_getCurrentVideo();
-      setTimeout(function(){
-        megaplaya.api_growl("Now Playing: " + video.post_title)
-      }, 1000);
+      var video = megaplaya.api_getCurrentVideo(),
+          index = megaplaya.api_getCurrentVideoIndex();
+      var item = $('#video_'+index);
+      $('#videos li.selected').removeClass('selected');
+      item.addClass('selected');
+      megaplaya.api_growl("Now Playing: " + video.post_title)
       break;
     default:
       debug("Unhandled megaplaya event: "+event_name);
@@ -112,7 +109,6 @@ function load_videos_callback(data){
 
   if (videos) {
     update_video_list(videos);
-    megaplaya.api_growl(videos.length+" videos loaded...");
     megaplaya.api_playQueue(videos);
   }
 }
@@ -121,11 +117,27 @@ function update_video_list(videos) {
   debug("update_video_list()...", videos);
   $('#videos ul').html('');
   $.each(videos, function(i, video) {
-    debug("Adding video #"+i, video);
-    $('#videos ul').append('<li>'+
-        '<div class="thumbnail"><a href="#"><img src="http://b.vimeocdn.com/ts/167/282/167282503_200.jpg" /></a></div>' +
-        '<div class="title"><a href="#">Video '+(i+1)+'</a></div>' +
-        '<div class="details">Site #' + video.site_id + ' <a href="'+video.post_url+'">Link</a></div>' +
+    // debug("Adding video #"+i, video);
+    $('#videos ul').append('<li id="video_'+i+'">'+
+        '<div class="thumbnail"><a href="#" target="_blank"><img src="http://b.vimeocdn.com/ts/167/282/167282503_200.jpg" /></a></div>' +
+        '<div class="title"><a href="#" target="_blank">'+video.post_title+'</a></div>' +
+        '<div class="details">video #'+(i+1)+' / <a href="'+video.post_url+'" target="_blank">site #'+video.site_id+' </a></div>' +
+        '<div class="clear"></div>' +
       '</li>');
   });
+
+  // TODO use jquery.live()
+  $('#videos li').click(function(){
+    var index = this.id.replace('video_', '');
+    debug("video index => "+index);
+    megaplaya.api_playQueueAt(index);
+    return false;
+  });
+
+  $('#videos li a').click(function(){
+    debug("CLICKED LINK...");
+    $(this).parent().click();
+    return false;
+  });
+
 }
