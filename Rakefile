@@ -1,4 +1,4 @@
 desc 'Deploy'
 task :deploy do
-  sh 'rsync -rtzh --progress --delete ./ dubslice:/var/www/hypem.tv/'
+  sh 'rsync -rtzh --progress --delete ./ jamiew@txd:~/web/public/secret/hypetv'
 end
