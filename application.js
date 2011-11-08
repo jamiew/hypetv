@@ -124,9 +124,9 @@ function update_video_list(videos) {
   $.each(videos, function(i, video){
 
     $('#videos ul').append('<li id="video_'+i+'">'+
-        '<div class="thumbnail">THUMB</div>' +
-        '<div class="title">TITLE</div>' +
-        '<div class="details">DETAILS</div>' +
+        '<div class="thumbnail"></div>' +
+        '<div class="title"></div>' +
+        '<div class="details"></div>' +
         '<div class="clear"></div>' +
       '</li>');
 
