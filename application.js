@@ -26,7 +26,6 @@ function megaplaya_loaded(){
   megaplaya_addListeners();
   $.history.init(function(hash){
     if(hash == "") {
-      debug("initialize your app normally");
       blogname = 'popular'; // default
     } else {
       debug("restore the state from hash");
@@ -56,10 +55,9 @@ function megaplaya_callback(event_name, args) {
       var video = megaplaya.api_getCurrentVideo(),
           index = megaplaya.api_getCurrentVideoIndex();
       var item = $('#video_'+index);
-      debug("ONVIDEOLOAD", item);
       $('#videos li.selected').removeClass('selected');
       item.addClass('selected');
-      megaplaya.api_growl("Now Playing: " + video.post_title)
+      // megaplaya.api_growl("Now Playing: " + video.title)
       break;
     default:
       // debug("Unhandled megaplaya event: "+event_name);
@@ -86,15 +84,17 @@ function load_videos_callback(data){
   debug(data);
   debug(data[0]);
 
+  var i = 0;
   var videos = $.map(data, function(item){
     var video = {
-          site: item.hreftitle,
-          id: item.url,
-          post_title: item.posttitle,
-          post_url: item.postentryurl,
-          site_id: item.siteid,
-          created_at: item.dateposted,
-        }
+      internal_id: i,
+      id: item.url,
+      site: item.hreftitle,
+      post_title: item.posttitle,
+      post_url: item.postentryurl,
+      site_id: item.siteid,
+      created_at: item.dateposted,
+    }
     if(item.hreftitle == 'YOUTUBE') {
       video.url = "http://www.youtube.com/watch?v="+video.id;
       // debug("Matched YouTube: "+video.url);
@@ -106,31 +106,32 @@ function load_videos_callback(data){
     else {
       debug("WARN: no match for site "+video.site);
     }
+    i++;
     return video;
   });
   blog_posts = videos;
 
   $('#videos ul').html('');
   if (videos) {
-    debug("got videos, doing stuff");
     megaplaya.api_playQueue(videos);
     update_video_list(videos);
+    $('#videos li:first').addClass('selected');
   }
 }
 
 function update_video_list(videos) {
-  debug("update_video_list()...", videos);
-  debug("loading "+videos.length+" videos...");
+  debug("update_video_list(): loading "+videos.length+" videos...", videos);
   $.each(videos, function(i, video){
 
-    $('#videos ul').append('<li id="video_'+i+'">'+
+    $('#videos ul').append('<li id="video_'+video.internal_id+'">'+
         '<div class="thumbnail"></div>' +
-        '<div class="title"></div>' +
+        '<div class="title">'+video.post_title+'</div>' +
         '<div class="details"></div>' +
         '<div class="clear"></div>' +
       '</li>');
 
-    // TODO batch url support in vhx api
+    // TODO need batch url support in vhx api
+    // load videolists / inject into megaplaya only after the one bulk-call has returned
     $.ajax({
       type: "GET",
       url: "http://api.vhx.tv/info.json?callback=load_video_info&url="+video.url,
@@ -140,59 +141,47 @@ function update_video_list(videos) {
     });
   });
 
-  debug('~~~~ #toggle_'+blogname);
-  $('.toggles.selected').removeClass('selected');
-  $('#toggle_'+blogname).addClass('selected');
-
-}
-
-var video_i = 0,
-    first_loaded = false;
-function load_video_info(data) {
-  var video = data.video;
-  var i = video_i;
-  // debug("Adding video #"+i, video);
-  if(video.post_url == undefined) video.post_url = video.url; // FIXME save article url for these too...
-
-  // Get blog info out of original array
-  // FIXME invert hash by url and do this more easily
-  for(var j = 0; j < blog_posts.length; j++) {
-    post = blog_posts[j];
-    // debug(post);
-    video.post_url == post.post_url;
-    video.post_title = post.post_title;
-    video.site_id = post.site_id;
-  }
-  $('#video_'+i+' .thumbnail').html('<a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a>');
-  $('#video_'+i+' .title').html('<a href="'+video.url+'" target="_blank">'+video.title+'</a>');
-  $('#video_'+i+' .details').html('<span><a href="#'+video.site_id+'">Blog '+video.site_id+'</a></span>&nbsp;&ndash;&nbsp;<a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a>');
-  // $('.details em a')
-  // $('.title a')
-  // $(video)
-
-
-  if (!first_loaded) {
-    debug("NOT FIRST LOADED....");
-    $('#video_'+i).addClass('selected'); // FIXME load order messes with 1st video getting selected; force it
-    first_loaded = true;
-  }
-
-
   // TODO use jquery.live()
-  $('#video_'+i+'').click(function(){
+  $('#videos li').click(function(){
     var index = this.id.replace('video_', '');
     debug("video index => "+index);
     megaplaya.api_playQueueAt(index);
     return false;
   });
 
-  $('#video_'+i+' a').click(function(){
+  $('#videos li a').click(function(){
     debug("CLICKED LINK...");
     $(this).parent().click();
     return false;
   });
 
-  video_i++;
+  // Select which page we just loaded
+  $('.toggles.selected').removeClass('selected');
+  $('#toggle_'+blogname).addClass('selected');
+
+}
+
+function load_video_info(data) {
+  var video = data.video;
+
+  // Get blog info out of original array
+  // FIXME invert hash by url and do this more easily
+  for (var j = 0; j < blog_posts.length; j++) {
+    post = blog_posts[j];
+    // debug(post);
+    if (post.url == video.url) {
+      video.internal_id = post.internal_id;
+      video.post_url = post.post_url;
+      video.post_title = post.post_title;
+      video.site_id = post.site_id;
+      debug("matched "+video.internal_id+" => "+video.url);
+      break;
+    }
+  }
+
+  $('#video_'+video.internal_id+' .thumbnail').html('<a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a>');
+  $('#video_'+video.internal_id+' .title').html('<a href="'+video.url+'" target="_blank">'+video.title+'</a>');
+  $('#video_'+video.internal_id+' .details').html('<span>Posted by <a href="#blog-'+video.site_id+'">blog #'+video.site_id+'</a></span><br /><a href="'+video.post_url+'" target="_blank">[link]</a>');
 }
 
 
