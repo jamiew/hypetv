@@ -2,8 +2,7 @@ function debug(){
   try { console.log(arguments); } catch(e){}
 }
 
-// Set blog name if passed like http://reblogvision.com/#jamiew.tumblr.com
-var blogname = "jamiew.tumblr.com";
+var blogname = "popular";
 if(window.location.hash){
   blogname = window.location.hash.replace(/^\#/,'');
   debug("Set blogname to "+blogname);
@@ -18,7 +17,6 @@ $(document).ready(function(){
     allowFullScreen: true,
     allowScriptAccess: "always"
   });
-
 });
 
 // Megaplaya calls this function when it's ready
@@ -26,7 +24,17 @@ var megaplaya = false;
 function megaplaya_loaded(){
   megaplaya = $('#megaplaya').children()[0];
   megaplaya_addListeners();
-  load_videos();
+  $.history.init(function(hash){
+    if(hash == "") {
+      debug("initialize your app normally");
+      blogname = 'popular'; // default
+    } else {
+      debug("restore the state from hash");
+      blogname = window.location.hash.replace(/^\#/,'');
+    }
+    load_videos();
+  },
+  { unescape: ",/" });
 }
 
 function megaplaya_call(method){
@@ -48,8 +56,8 @@ function megaplaya_callback(event_name, args) {
       var video = megaplaya.api_getCurrentVideo(),
           index = megaplaya.api_getCurrentVideoIndex();
       var item = $('#video_'+index);
+      debug("ONVIDEOLOAD", item);
       $('#videos li.selected').removeClass('selected');
-      item.addClass('selected');
       megaplaya.api_growl("Now Playing: " + video.post_title)
       break;
     default:
@@ -58,32 +66,25 @@ function megaplaya_callback(event_name, args) {
   }
 }
 
+var hype_list = undefined;
 function load_videos() {
-  debug("load_videos()...");
+  debug("load_videos()...", blogname);
   $.ajax({
     type: "GET",
-    url: "http://api.hypem.com/api/experimental_video_latest",
+    url: "http://api.hypem.com/api/experimental_video_"+blogname,
     dataType: 'jsonp',
     success: load_videos_callback,
     error: function(){ alert("Error fetching data") }
   });
+  $('#toggle_popular').addClass('selected');
 }
 
+var blog_posts = undefined;
 function load_videos_callback(data){
   debug("load_videos_callback()...");
   debug(data);
   debug(data[0]);
 
-  // // Set blog info
-  // var blog = data.response.blog;
-  // $('#video-info').hide();
-  // $('#video-info .title').html('<a target="_blank" href="'+video-info.url+'">'+video-info.title+'</a>');
-  // $('#video-info .url').html('<a target="_blank" href="'+video-info.url+'">'+video-info.url.replace('http://','').replace(/\/$/,'')+'</a>');
-  // $('#video-info .description').html(video-info.description);
-  // // Tumblr API doesn't have avatar :-(
-  // $('#video-info').fadeIn('slow');
-  //
-  // Process and load videos
   var videos = $.map(data, function(item){
     var video = {
           site: item.hreftitle,
@@ -106,6 +107,7 @@ function load_videos_callback(data){
     }
     return video;
   });
+  blog_posts = videos;
 
   if (videos) {
     update_video_list(videos);
@@ -116,6 +118,7 @@ function load_videos_callback(data){
 function update_video_list(videos) {
   debug("update_video_list()...", videos);
   $('#videos ul').html('');
+  debug("loading "+videos.length+" videos...");
   $.each(videos, function(i, video){
     // TODO batch url support in vhx api
     $.ajax({
@@ -126,19 +129,34 @@ function update_video_list(videos) {
       error: function(){ alert("Error fetching data") }
     });
   });
+
+  debug('~~~~ #toggle_'+blogname);
+  $('.toggles.selected').removeClass('selected');
+  $('#toggle_'+blogname).addClass('selected');
+
 }
 
 var video_i = 0;
 function load_video_info(data) {
   var video = data.video;
   var i = video_i;
-  debug("Adding video #"+i, video);
+  // debug("Adding video #"+i, video);
   if(video.post_url == undefined) video.post_url = video.url; // FIXME save article url for these too...
 
+  // Get blog info out of original array
+  // FIXME invert hash by url and do this more easily
+  for(var j = 0; j < blog_posts.length; j++) {
+    post = blog_posts[j];
+    // debug(post);
+    video.post_url == post.post_url;
+    video.post_title = post.post_title;
+    video.site_id = post.site_id;
+  }
+
   $('#videos ul').append('<li id="video_'+i+'">'+
-      '<div class="thumbnail"><a href="#" target="_blank"><img src="'+video.thumbnail_url+'" /></a></div>' +
-      '<div class="title"><a href="#" target="_blank">'+video.title+'</a></div>' +
-      '<div class="details">video #'+(i+1)+' / <a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a></div>' +
+      '<div class="thumbnail"><a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a></div>' +
+      '<div class="title"><a href="'+video.url+'" target="_blank">'+video.title+'</a></div>' +
+      '<div class="details"><em><a href="#'+video.site_id+'">Blog '+video.site_id+'</a></em>&nbsp;&ndash;<a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a></div>' +
       '<div class="clear"></div>' +
     '</li>');
 
@@ -150,7 +168,7 @@ function load_video_info(data) {
     return false;
   });
 
-  $('#videos li a').click(function(){
+  $('#video_'+i+' a').click(function(){
     debug("CLICKED LINK...");
     $(this).parent().click();
     return false;

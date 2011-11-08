@@ -16,16 +16,19 @@ body { background: #000 url(images/hype-header-bg.png) repeat-x; }
 #container { width: 1075px; height: 750px; margin: 0 auto; background: url(images/hype-bg.jpg) no-repeat 0 75px; padding: 80px 0 0; } /* 180px left/right */
 #header { height: 75px; position: absolute; top: 0; text-align: center; }
 #player { height: 540px; padding: 0; margin: 0 auto; margin-top: 120px; border: 3px solid #fff; -webkit-border-radius: 3px; background-color: #fff; }
-#megaplaya { width: 785px; height: 97%; float: left; padding-top: 8px; }
+#megaplaya { width: 765px; height: 97%; float: left; padding-top: 8px; }
 
-#videos { width: 280px; height: 100%; overflow: scroll; float: left; background-color: #eee; }
+#videos { width: 300px; height: 100%; overflow: scroll; overflow-x: hidden; float: left; background-color: #eee; }
 #videos ul { margin: 0; padding: 0; }
 #videos li { font-size: 9pt; color: #000; list-style: none; padding: 8px 10px 0px; margin: 0; background-color: #f9f9f9; border-bottom: 1px solid #eaeaea; }
 #videos li:hover { cursor: pointer; }
 #videos li a { color: #000; }
 #videos li.selected { background-color: #e0ffe0; border-color: #9f9; }
-#videos li .thumbnail img { width: 100px; float: left; margin-right: 10px; }
+#videos li .thumbnail img { width: 155px; float: left; margin-right: 10px; }
 #videos li .title { font-size: 10pt; }
 #videos li .details { color: #aaa; margin-top: 3px; }
 #videos li .details a { color: #a0a0a0; font-weight: bold; }
 #videos li .clear { clear: both; }
+
+.toggles { font-size: 14pt; padding: 12px 16px; float: right; background: #eee; color: #000; position: relative; top: -1px; box-shadow: 1px 1px 1px #444; }
+.toggles.selected { background: #f93f4a; color: #333; text-shadow: 3px; }
