@@ -116,18 +116,34 @@ function load_videos_callback(data){
 function update_video_list(videos) {
   debug("update_video_list()...", videos);
   $('#videos ul').html('');
-  $.each(videos, function(i, video) {
-    // debug("Adding video #"+i, video);
-    $('#videos ul').append('<li id="video_'+i+'">'+
-        '<div class="thumbnail"><a href="#" target="_blank"><img src="http://b.vimeocdn.com/ts/167/282/167282503_200.jpg" /></a></div>' +
-        '<div class="title"><a href="#" target="_blank">'+video.post_title+'</a></div>' +
-        '<div class="details">video #'+(i+1)+' / <a href="'+video.post_url+'" target="_blank">site #'+video.site_id+' </a></div>' +
-        '<div class="clear"></div>' +
-      '</li>');
+  $.each(videos, function(i, video){
+    // TODO batch url support in vhx api
+    $.ajax({
+      type: "GET",
+      url: "http://api.vhx.tv/info.json?callback=load_video_info&url="+video.url,
+      dataType: 'jsonp',
+      success: load_video_info,
+      error: function(){ alert("Error fetching data") }
+    });
   });
+}
+
+var video_i = 0;
+function load_video_info(data) {
+  var video = data.video;
+  var i = video_i;
+  debug("Adding video #"+i, video);
+  if(video.post_url == undefined) video.post_url = video.url; // FIXME save article url for these too...
+
+  $('#videos ul').append('<li id="video_'+i+'">'+
+      '<div class="thumbnail"><a href="#" target="_blank"><img src="'+video.thumbnail_url+'" /></a></div>' +
+      '<div class="title"><a href="#" target="_blank">'+video.title+'</a></div>' +
+      '<div class="details">video #'+(i+1)+' / <a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a></div>' +
+      '<div class="clear"></div>' +
+    '</li>');
 
   // TODO use jquery.live()
-  $('#videos li').click(function(){
+  $('#video_'+i+'').click(function(){
     var index = this.id.replace('video_', '');
     debug("video index => "+index);
     megaplaya.api_playQueueAt(index);
@@ -140,4 +156,7 @@ function update_video_list(videos) {
     return false;
   });
 
+  video_i++;
 }
+
+
