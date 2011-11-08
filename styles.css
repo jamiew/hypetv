@@ -15,20 +15,23 @@ a:hover { color: #f93f4a; }
 body { background: #000 url(images/hype-header-bg.png) repeat-x; }
 #container { width: 1075px; height: 750px; margin: 0 auto; background: url(images/hype-bg.jpg) no-repeat 0 75px; padding: 80px 0 0; } /* 180px left/right */
 #header { height: 75px; position: absolute; top: 0; text-align: center; }
-#player { height: 540px; padding: 0; margin: 0 auto; margin-top: 120px; border: 3px solid #fff; -webkit-border-radius: 3px; background-color: #fff; }
-#megaplaya { width: 765px; height: 97%; float: left; padding-top: 8px; }
+#player { height: 550px; padding: 0; margin: 0 auto; margin-top: 120px; border: 3px solid #fff; -webkit-border-radius: 3px; background-color: #fff; }
+#megaplaya { width: 765px; height: 98%; float: left; padding-top: 8px; }
 
 #videos { width: 300px; height: 100%; overflow: scroll; overflow-x: hidden; float: left; background-color: #eee; }
 #videos ul { margin: 0; padding: 0; }
-#videos li { font-size: 9pt; color: #000; list-style: none; padding: 8px 10px 0px 6px; margin: 0; background-color: #f9f9f9; border-bottom: 1px solid #eaeaea; }
-#videos li:hover { cursor: pointer; }
+#videos li { display: none; font-size: 9pt; color: #000; list-style: none; padding: 8px 10px 5px 6px; margin: 0; background-color: #f9f9f9; border-bottom: 1px solid #eaeaea; }
+#videos li:hover, #videos li a:hover, #videos img:hover { cursor: pointer; }
 #videos li a { color: #000;}
 #videos li.selected { background-color: #e0ffe0; border-color: #9f9; }
-#videos li .thumbnail img { width: 152px; float: left; margin-right: 6px; }
+#videos li .thumbnail img { width: 152px; float: left; margin-right: 6px; box-shadow: 1px 1px 1px #aaa; }
 #videos li .title { font-size: 10pt; }
 #videos li .details { color: #aaa; margin-top: 3px; }
-#videos li .details a { color: #a0a0a0; font-weight: bold; }
+#videos li .details a { color: #909a90; font-weight: bold; }
 #videos li .clear { clear: both; }
+#videos li .post_title { margin-top: 6px; margin-left: 165px; padding: 3px; background-color: #f9f9f9; box-shadow: 1px 1px 1px #aaa; }
+/*#videos li.selected .post_title { background-color: transparent; }*/
+#videos li .post_title a { font-weight: normal; font-size: 8pt; }
 
 .toggles { display: none; } /* not loading correctly */
 .toggles { font-size: 14pt; padding: 12px 16px; float: right; background: #eee; color: #000; position: relative; top: -1px; box-shadow: 1px 1px 1px #444; }
