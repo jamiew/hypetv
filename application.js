@@ -2,12 +2,6 @@ function debug(){
   try { console.log(arguments); } catch(e){}
 }
 
-var blogname = "popular";
-if(window.location.hash){
-  blogname = window.location.hash.replace(/^\#/,'');
-  debug("Set blogname to "+blogname);
-}
-
 // Load VHX player
 $(document).ready(function(){
   $('#megaplaya').flash({
@@ -20,13 +14,14 @@ $(document).ready(function(){
 });
 
 // Megaplaya calls this function when it's ready
-var megaplaya = false;
+var megaplaya = false,
+    blogname = undefined;
 function megaplaya_loaded(){
   megaplaya = $('#megaplaya').children()[0];
   megaplaya_addListeners();
   $.history.init(function(hash){
     if(hash == "") {
-      blogname = 'popular'; // default
+      blogname = 'latest'; // default
     } else {
       debug("restore the state from hash");
       blogname = window.location.hash.replace(/^\#/,'');
@@ -141,17 +136,18 @@ function update_video_list(videos) {
     });
   });
 
+
+  $('#videos li a').click(function(){
+    debug("CLICKED LINK...");
+    // $(this).parent().click();
+    // return false;
+  });
+
   // TODO use jquery.live()
   $('#videos li').click(function(){
     var index = this.id.replace('video_', '');
     debug("video index => "+index);
     megaplaya.api_playQueueAt(index);
-    return false;
-  });
-
-  $('#videos li a').click(function(){
-    debug("CLICKED LINK...");
-    $(this).parent().click();
     return false;
   });
 
@@ -179,9 +175,12 @@ function load_video_info(data) {
     }
   }
 
-  $('#video_'+video.internal_id+' .thumbnail').html('<a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a>');
-  $('#video_'+video.internal_id+' .title').html('<a href="'+video.url+'" target="_blank">'+video.title+'</a>');
-  $('#video_'+video.internal_id+' .details').html('<span>Posted by <a href="#blog-'+video.site_id+'">blog #'+video.site_id+'</a></span><br /><a href="'+video.post_url+'" target="_blank">[link]</a>');
+  var obj = $('#video_'+video.internal_id);
+  obj.find('.thumbnail').html('<a href="'+video.url+'" target="_blank"><img src="'+video.thumbnail_url+'" /></a>');
+  obj.find('.title').html('<a href="'+video.url+'" target="_blank">'+video.title+'</a>');
+  obj.find('.details').html('<div class="posted_by">Posted by <a href="#blog-'+video.site_id+'">blog #'+video.site_id+'</a></div>')
+  obj.find('.details').append('<div class="post_title"><a href="'+video.post_url+'" target="_blank">'+video.post_title+'</a></div>');
+  obj.show();
 }
 
 
